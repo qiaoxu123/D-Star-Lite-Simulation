@@ -29,16 +29,16 @@ class Element:
         return self.key != other.key
 
     def __lt__(self, other):
-        return ((self.value1, self.value2) < (other.value1, other.value2))
+        return (self.value1, self.value2) < (other.value1, other.value2)
 
     def __le__(self, other):
-        return ((self.value1, self.value2) <= (other.value1, other.value2))
+        return (self.value1, self.value2) <= (other.value1, other.value2)
 
     def __gt__(self, other):
-        return ((self.value1, self.value2) > (other.value1, other.value2))
+        return (self.value1, self.value2) > (other.value1, other.value2)
 
     def __ge__(self, other):
-        return ((self.value1, self.value2) >= (other.value1, other.value2))
+        return (self.value1, self.value2) >= (other.value1, other.value2)
 
 
 '''
@@ -53,7 +53,7 @@ class Dstar_lite:
         self.start = np.array([x_start, y_start])
         self.goal = np.array([x_goal, y_goal])
         self.k_m = 0
-        self.rhs = np.ones(len(map), len(map[0])) * np.inf
+        self.rhs = np.ones((len(map), len(map[0]))) * np.inf
         self.g = self.rhs.copy()
         self.global_map = map
         self.sensed_map = np.zeros((len(map), len(map[0])))
@@ -118,7 +118,7 @@ class Dstar_lite:
         col = len(self.global_map[0])
         real_list = []
         for s in s_list:
-            if s[0] >= 0 and s[0] < row and s[1] >= 0 and s[1] < col:
+            if 0 <= s[0] < row and 0 <= s[1] < col:
                 real_list.append(s)
         return real_list
 
