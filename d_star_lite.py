@@ -7,8 +7,10 @@ All rights reserved
 
 import numpy as np
 import heapq
-from numpy.random import random_integers as rnd
+
+from numpy.random import random_integers as rnd, randint
 import matplotlib.pyplot as plt
+import os
 
 '''
 This class used to store data in priority queue.
@@ -46,17 +48,17 @@ Algorithm class
 '''
 
 
-class Dstar_lite:
+class D_star_lite:
 
-    def __init__(self, map, x_goal, y_goal, x_start, y_start):
+    def __init__(self, r_map, x_goal, y_goal, x_start, y_start):
         # initialize
         self.start = np.array([x_start, y_start])
         self.goal = np.array([x_goal, y_goal])
         self.k_m = 0
-        self.rhs = np.ones((len(map), len(map[0]))) * np.inf
+        self.rhs = np.ones((len(r_map), len(r_map[0]))) * np.inf
         self.g = self.rhs.copy()
-        self.global_map = map
-        self.sensed_map = np.zeros((len(map), len(map[0])))
+        self.global_map = r_map
+        self.sensed_map = np.zeros((len(r_map), len(r_map[0])))
         self.rhs[self.goal[0], self.goal[1]] = 0
         self.queue = []
         A = Element(self.goal, *self.CalculateKey(self.goal))
@@ -113,7 +115,7 @@ class Dstar_lite:
     def succ(self, u):
         s_list = [np.array([u[0] - 1, u[1] - 1]), np.array([u[0] - 1, u[1]]), np.array([u[0] - 1, u[1] + 1]),
                   np.array([u[0], u[1] - 1]), np.array([u[0], u[1] + 1]), np.array([u[0] + 1, u[1] - 1]),
-                  np.array([u[0] + 1, u[1]]), np.array([u[0] + 1, u[1] + 1])];
+                  np.array([u[0] + 1, u[1]]), np.array([u[0] + 1, u[1] + 1])]
         row = len(self.global_map)
         col = len(self.global_map[0])
         real_list = []
@@ -138,15 +140,14 @@ class Dstar_lite:
         col = len(self.global_map[0])
         for i in range(-range_s, range_s + 1):
             for j in range(-range_s, range_s + 1):
-                if self.start[0] + i >= 0 and self.start[0] + i < row and self.start[1] + j >= 0 and self.start[
-                    1] + j < col:
+                if 0 <= self.start[0] + i < row and 0 <= self.start[1] + j < col:
                     if not (i == 0 and j == 0):
                         real_list.append(np.array([self.start[0] + i, self.start[1] + j]))
         return real_list
 
 
-def Main(map, x_goal, y_goal, x_start, y_start):
-    ds = Dstar_lite(map, x_goal, y_goal, x_start, y_start)
+def Main(r_map, x_goal, y_goal, x_start, y_start):
+    ds = D_star_lite(r_map, x_goal, y_goal, x_start, y_start)
     last = ds.start
     last, curr_update = Scan(ds, last)
     path = [ds.start]
@@ -154,6 +155,9 @@ def Main(map, x_goal, y_goal, x_start, y_start):
     updated_points = [curr_update.copy()]
     ds.ComputeShortestPath()
     count = 0
+    plt.figure(1)
+    plt.plot(x_start, y_start)
+    plt.plot(x_goal, y_goal)
     while np.sum(np.abs(ds.start - ds.goal)) != 0 and count < 100000:
         count += 1
         print("curr_location:", ds.start)
@@ -161,14 +165,13 @@ def Main(map, x_goal, y_goal, x_start, y_start):
         min_s = np.inf
         for s in s_list:
             if ds.cost(ds.start, s) + ds.g[s[0], s[1]] < min_s:
-                # print(ds.cost(ds.start, s), ds.g[s[0],s[1]])
                 min_s = ds.cost(ds.start, s) + ds.g[s[0], s[1]]
                 temp = s
         ds.start = temp.copy()
-        path.append(ds.start)
         sensed_map.append(ds.sensed_map.copy())
         last, curr_update = Scan(ds, last)
-        updated_points.append(curr_update)
+        display_lite_full(r_map, sensed_map, ds.start[0], ds.start[1], x_goal, y_goal, path)
+        plt.pause(0.001)
     return path, sensed_map, updated_points
 
 
@@ -196,21 +199,21 @@ def Scan(ds, last):
 
 
 # randomly generate connected maze
-def maze(width=81, height=51, complexity=.75, density=.75):
+def maze(width, height, complexity=.06, density=.01):
     # Only odd shapes
     shape = ((height // 2) * 2 + 1, (width // 2) * 2 + 1)
     # Adjust complexity and density relative to maze size
     complexity = int(complexity * (5 * (shape[0] + shape[1])))
     density = int(density * (shape[0] // 2 * shape[1] // 2))
     # Build actual maze
-    Z = np.zeros(shape, dtype=float)
+    z = np.zeros(shape, dtype=float)
     # Fill borders
-    Z[0, :] = Z[-1, :] = 1
-    Z[:, 0] = Z[:, -1] = 1
+    z[0, :] = z[-1, :] = 1
+    z[:, 0] = z[:, -1] = 1
     # Make isles
     for i in range(density):
-        x, y = rnd(0, shape[1] // 2) * 2, rnd(0, shape[0] // 2) * 2
-        Z[y, x] = 1
+        x, y = randint(0, shape[1] // 2) * 2, randint(0, shape[0] // 2) * 2
+        z[y, x] = 1
         for j in range(complexity):
             neighbours = []
             if x > 1:           neighbours.append((y, x - 2))
@@ -218,54 +221,29 @@ def maze(width=81, height=51, complexity=.75, density=.75):
             if y > 1:           neighbours.append((y - 2, x))
             if y < shape[0] - 2:  neighbours.append((y + 2, x))
             if len(neighbours):
-                y_, x_ = neighbours[rnd(0, len(neighbours) - 1)]
-                if Z[y_, x_] == 0:
-                    Z[y_, x_] = 1
-                    Z[y_ + (y - y_) // 2, x_ + (x - x_) // 2] = 1
+                y_, x_ = neighbours[randint(0, len(neighbours) - 1)]
+                if z[y_, x_] == 0:
+                    z[y_, x_] = 1
+                    z[y_ + (y - y_) // 2, x_ + (x - x_) // 2] = 1
                     x, y = x_, y_
-    return Z
+    return z
 
 
-Z = maze(width=100, height=100)
-Z[Z == 1] = np.inf
-print(Z)
-map = Z.copy()
-x_goal = 99
-y_goal = 99
-x_start = 1
-y_start = 1
-# ds = Dstar_lite(map, x_goal, y_goal, x_start, y_start)
-path, sensed_map, updated_points = Main(map, x_goal, y_goal, x_start, y_start)
-print(path)
+def display_lite_full(M, M_change, x_init, y_init, x_goal, y_goal, trajectory):
+    plt.imshow(trajectory)
+    plt.imshow(M, cmap='bone')
 
-# print into txt, which is used for MATLAB to visualize
-file = open('map.txt', 'w')
-for line in map:
-    for number in line:
-        if number > 1:
-            number = 1
-        file.write(str(int(number)) + ' ')
-    file.write('\n')
-file.close()
 
-file = open('path.txt', 'w')
-for p in path:
-    file.write(str(p[0] + 1) + ' ' + str(p[1] + 1) + '\n')
-file.close()
-
-file = open('sensed_map.txt', 'a')
-for map in sensed_map:
-    for line in map:
-        for number in line:
-            if number > 1:
-                number = 1
-            file.write(str(int(number)) + ' ')
-        file.write('\n')
-file.close()
-
-file = open('updated_points.txt', 'a')
-for line in updated_points:
-    for number in line:
-        file.write(str(int(number)) + ' ')
-    file.write('\n')
-file.close()
+if __name__ == "__main__":
+    Z = maze(width=50, height=50)
+    Z[Z == 1] = np.inf
+    # set obstacle positions
+    r_map = Z.copy()
+    x_goal = 49
+    y_goal = 49
+    x_start = 1
+    y_start = 1
+    plt.figure(figsize=(50, 50))
+    ds = D_star_lite(r_map, x_goal, y_goal, x_start, y_start)
+    path, sensed_map, updated_points = Main(r_map, x_goal, y_goal, x_start, y_start)
+    plt.show()
