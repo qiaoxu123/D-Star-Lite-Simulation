@@ -38,6 +38,7 @@ class DStarLitePlanning:
         self.rhs = np.ones((len(r_map), len(r_map[0]))) * np.inf
         self.g = self.rhs.copy()
         self.global_map = r_map
+        self.sensed_map = np.zeros((len(r_map), len(r_map[0])))
         self.rhs[self.goal[0], self.goal[1]] = 0
         self.queue = []
         node = Element(self.goal, *self.CalculateKey(self.goal))
@@ -104,34 +105,61 @@ class DStarLitePlanning:
 
     # calculate cost between nodes
     def cost(self, u1, u2):
-        if self.global_map[u1[0], u1[1]] == np.inf or self.global_map[u2[0], u2[1]] == np.inf:
+        if self.sensed_map[u1[0], u1[1]] == np.inf or self.sensed_map[u2[0], u2[1]] == np.inf:
             return np.inf
         else:
             return self.h_estimate(u1, u2)
+    def sense(self, range_s):
+        real_list = []
+        row = len(self.global_map)
+        col = len(self.global_map[0])
+        for i in range(-range_s, range_s + 1):
+            for j in range(-range_s, range_s + 1):
+                if self.start[0] + i >= 0 and self.start[0] + i < row and self.start[1] + j >= 0 and self.start[
+                    1] + j < col:
+                    if not (i == 0 and j == 0):
+                        real_list.append(np.array([self.start[0] + i, self.start[1] + j]))
+        return real_list
 
 
 def Main(global_map, gx, gy, sx, sy):
-    node = DStarLitePlanning(global_map, gx, gy, sx, sy)
+    node = DStarLitePlanning(global_map, sx, sy, gx, gy)
     last = node.start
-    count = 0
+    last = Scan(node, last)
     node.ComputeShortestPath()
-    rx, ry = [], []
-    while np.sum(np.abs(node.start - node.goal)) != 0 and count < 100000:
-        count += 1
+    sensed_map = [node.sensed_map.copy()]
+    while np.sum(np.abs(node.start - node.goal)) != 0:
         s_list = node.succ(node.start)
         min_s = np.inf
-        temp = [0, 0]
         for s in s_list:
+            plt.plot(s[0],s[1], 'xr')
             if node.cost(node.start, s) + node.g[s[0], s[1]] < min_s:
                 min_s = node.cost(node.start, s) + node.g[s[0], s[1]]
                 temp = s
         node.start = temp
-        node.ComputeShortestPath()
-        rx.append(node.start[0])
-        ry.append(node.start[1])
+        plt.plot(node.start[0], node.start[1], '.b')
         print(node.start[0], node.start[1])
-        plt.scatter(node.start[0], node.start[1], c='b', marker='x')
+        node.ComputeShortestPath()
+        last = Scan(node, last)
         plt.pause(0.01)
+
+def Scan(ds, last):
+    s_list = ds.sense(3)
+    flag = True
+    for s in s_list:
+        if ds.sensed_map[s[0], s[1]] != ds.global_map[s[0], s[1]]:
+            flag = False
+            print('See a wall!')
+            break
+    if flag == False:
+        ds.k_m += ds.h_estimate(last, ds.start)
+        last = ds.start.copy()
+        for s in s_list:
+            if ds.sensed_map[s[0], s[1]] != ds.global_map[s[0], s[1]]:
+                ds.sensed_map[s[0], s[1]] = ds.global_map[s[0], s[1]]
+                ds.UpdateVertex(s)
+        ds.ComputeShortestPath()
+    return last
 
 
 # randomly generate connected maze
