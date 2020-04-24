@@ -71,9 +71,8 @@ class DStarLitePlanning:
                 self.rhs[self.start[0], self.start[1]] != self.g[self.start[0], self.start[1]]:
             k_old = heapq.nsmallest(1, self.queue)[0]
             u = heapq.heappop(self.queue).key
-            temp = Element(u, *self.CalculateKey(u))
-            if k_old < temp:
-                heapq.heappush(self.queue, temp)
+            if k_old < Element(u, *self.CalculateKey(u)):
+                heapq.heappush(self.queue, Element(u, *self.CalculateKey(u)))
             elif self.g[u[0], u[1]] > self.rhs[u[0], u[1]]:
                 self.g[u[0], u[1]] = self.rhs[u[0], u[1]]
                 s_list = self.succ(u)
@@ -125,7 +124,7 @@ class DStarLitePlanning:
 def Main(global_map, gx, gy, sx, sy):
     node = DStarLitePlanning(global_map, sx, sy, gx, gy)
     last = node.start
-    last = Scan(node, last)
+    last = ScanAndUpdate(node, last)
     node.ComputeShortestPath()
     while np.sum(np.abs(node.start - node.goal)) != 0:
         s_list = node.succ(node.start)
@@ -138,10 +137,10 @@ def Main(global_map, gx, gy, sx, sy):
         node.start = temp.copy()
         print(node.start[0], node.start[1])
         plt.plot(node.start[0], node.start[1], '.b')
-        last = Scan(node, last)
+        last = ScanAndUpdate(node, last)
         plt.pause(0.1)
 
-def Scan(ds, last):
+def ScanAndUpdate(ds, last):
     s_list = ds.sense(3)
     flag = True
     for s in s_list:
@@ -202,8 +201,11 @@ if __name__ == "__main__":
 
     # set obstable positions
     ox, oy = [], []
-    global_map = maze(width=50, height=50)
-    global_map[global_map == 1] = np.inf
+    # global_map = maze(width=50, height=50)
+    # global_map[global_map == 1] = np.inf
+    # np.savetxt("global_map.txt", global_map)
+    global_map = np.loadtxt('map/global_map.txt')
+
     for i in range(1, len(global_map)):
         for j in range(1, len(global_map[i])):
             if global_map[i][j] == np.inf:
