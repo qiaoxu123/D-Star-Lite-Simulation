@@ -100,8 +100,8 @@ class DStarLitePlanning:
         return real_list
 
     # heuristic estimation
-    def h_estimate(self, start, node):
-        return np.linalg.norm(start - node)
+    def h_estimate(self, s1, s2):
+        return np.linalg.norm(s1 - s2)
 
     # calculate cost between nodes
     def cost(self, u1, u2):
@@ -109,14 +109,14 @@ class DStarLitePlanning:
             return np.inf
         else:
             return self.h_estimate(u1, u2)
+
     def sense(self, range_s):
         real_list = []
         row = len(self.global_map)
         col = len(self.global_map[0])
         for i in range(-range_s, range_s + 1):
             for j in range(-range_s, range_s + 1):
-                if self.start[0] + i >= 0 and self.start[0] + i < row and self.start[1] + j >= 0 and self.start[
-                    1] + j < col:
+                if 0 <= self.start[0] + i < row and 0 <= self.start[1] + j < col:
                     if not (i == 0 and j == 0):
                         real_list.append(np.array([self.start[0] + i, self.start[1] + j]))
         return real_list
@@ -127,21 +127,19 @@ def Main(global_map, gx, gy, sx, sy):
     last = node.start
     last = Scan(node, last)
     node.ComputeShortestPath()
-    sensed_map = [node.sensed_map.copy()]
     while np.sum(np.abs(node.start - node.goal)) != 0:
         s_list = node.succ(node.start)
         min_s = np.inf
         for s in s_list:
-            plt.plot(s[0],s[1], 'xr')
+            plt.plot(s[0],s[1], 'xy')
             if node.cost(node.start, s) + node.g[s[0], s[1]] < min_s:
                 min_s = node.cost(node.start, s) + node.g[s[0], s[1]]
                 temp = s
-        node.start = temp
-        plt.plot(node.start[0], node.start[1], '.b')
+        node.start = temp.copy()
         print(node.start[0], node.start[1])
-        node.ComputeShortestPath()
+        plt.plot(node.start[0], node.start[1], '.b')
         last = Scan(node, last)
-        plt.pause(0.01)
+        plt.pause(0.1)
 
 def Scan(ds, last):
     s_list = ds.sense(3)
@@ -156,6 +154,7 @@ def Scan(ds, last):
         last = ds.start.copy()
         for s in s_list:
             if ds.sensed_map[s[0], s[1]] != ds.global_map[s[0], s[1]]:
+                plt.plot(s[0],s[1], 'xr')
                 ds.sensed_map[s[0], s[1]] = ds.global_map[s[0], s[1]]
                 ds.UpdateVertex(s)
         ds.ComputeShortestPath()
@@ -204,9 +203,10 @@ if __name__ == "__main__":
     # set obstable positions
     ox, oy = [], []
     global_map = maze(width=50, height=50)
+    global_map[global_map == 1] = np.inf
     for i in range(1, len(global_map)):
         for j in range(1, len(global_map[i])):
-            if global_map[i][j] == 1.0:
+            if global_map[i][j] == np.inf:
                 ox.append(i)
                 oy.append(j)
     plt.grid(True)
@@ -214,7 +214,6 @@ if __name__ == "__main__":
     plt.plot(sx, sy, "og")
     plt.plot(gx, gy, "xb")
 
-    DStarLitePlanning(global_map, sx, sy, gx, gy)
     Main(global_map, gx, gy, sx, sy)
 
     # plt.plot(rx, ry, "-r")
