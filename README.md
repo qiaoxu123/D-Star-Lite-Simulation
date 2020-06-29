@@ -10,7 +10,7 @@ D* Lite 算法采用典型的动态规划思路实现，对比传统的A*算法�
 
 ### 2. The Second Version of D* Lite
 
-
+The second version of D* Lite, uses a search method derived from D* to avoid having to reorder the priority queue. The heuristics $h(s, s')$ now need to be nonnegative and forward-backward consistent. 
 
 
 

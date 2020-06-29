@@ -52,6 +52,7 @@ class DStarLitePlanning:
         return key
 
     def UpdateVertex(self, u):
+        plt.plot()
         if np.sum(np.abs(u - self.goal)) != 0:
             s_list = self.succ(u)
             min_s = np.inf
@@ -201,10 +202,10 @@ if __name__ == "__main__":
 
     # set obstable positions
     ox, oy = [], []
-    # global_map = maze(width=50, height=50)
-    # global_map[global_map == 1] = np.inf
-    # np.savetxt("global_map.txt", global_map)
-    global_map = np.loadtxt('map/global_map.txt')
+    global_map = maze(width=50, height=50)
+    global_map[global_map == 1] = np.inf
+    np.savetxt("map/global_map.txt", global_map)
+    # global_map = np.loadtxt('map/global_map.txt')
 
     for i in range(1, len(global_map)):
         for j in range(1, len(global_map[i])):

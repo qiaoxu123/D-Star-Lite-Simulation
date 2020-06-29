@@ -163,7 +163,7 @@ def ScanAndUpdate(node, last):
 
 
 # randomly generate connected maze
-def maze(width, height, complexity=.06, density=.01):
+def maze(width, height, complexity=.09, density=.01):
     # Only odd shapes
     shape = ((height // 2) * 2 + 1, (width // 2) * 2 + 1)
     # Adjust complexity and density relative to maze size
@@ -203,10 +203,10 @@ if __name__ == "__main__":
 
     # set obstable positions
     ox, oy = [], []
-    # global_map = maze(width=50, height=50)
-    # global_map[global_map == 1] = np.inf
-    # np.savetxt("global_map.txt", global_map)
-    global_map = np.loadtxt('map/global_map.txt')
+    global_map = maze(width=50, height=50)
+    global_map[global_map == 1] = np.inf
+    np.savetxt("global_map.txt", global_map)
+    # global_map = np.loadtxt('map/global_map.txt')
 
     for i in range(1, len(global_map)):
         for j in range(1, len(global_map[i])):
